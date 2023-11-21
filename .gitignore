@@ -73,3 +73,6 @@ site/
 
 # Mac files
 .DS_Store
+
+# Private files
+hh_context.json
