@@ -1,7 +1,7 @@
 import os.path
 from os import path
 
-herrera_homestead_file = 'hh_context.md'
+herrera_homestead_file = 'hh_context.json'
 
 def test_md_file_exists():
     assert path.exists(herrera_homestead_file)
