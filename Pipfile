@@ -5,6 +5,9 @@ name = "pypi"
 
 [packages]
 pyleniumio = "*"
+fastapi = "*"
+uvicorn = "*"
+markdown = "*"
 
 [dev-packages]
 
