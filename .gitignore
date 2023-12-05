@@ -76,3 +76,4 @@ site/
 
 # Private files
 hh_context.json
+secrets.json
