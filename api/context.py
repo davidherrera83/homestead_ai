@@ -29,15 +29,17 @@ def update_homestead_context(update: RootSchema, token: str = Header(None)):
     if token is None:
         raise HTTPException(status_code=401, detail='Token is missing')
 
-
     try:
-        with open(_json,'r') as file:
+        with open(_json, 'r') as file:
             existing_data = json.load(file)
     except FileNotFoundError:
         existing_data = {"entries": []}
 
-    # Merging logic
-    existing_data["entries"].extend(update.entries)
+    # Convert Entry objects to dictionaries for JSON serialization
+    entries_to_add = [entry.dict() for entry in update.entries]
+
+    # Merging Logic
+    existing_data["entries"].extend(entries_to_add)
 
     # Save updated data back to the file
     with open(_json, 'w') as file:
