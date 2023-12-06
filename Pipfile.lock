@@ -362,7 +362,7 @@
                 "sha256:fba1e91467c65fe64a82c689dc6cf58151158993b13eb7a7f3f4b7f395636723"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==41.0.5"
+            "version": ">=41.0.6,<42.0.0"
         },
         "execnet": {
             "hashes": [
