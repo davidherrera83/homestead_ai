@@ -8,26 +8,16 @@ from api.context import create_new_entry as create_entry_func
 
 @pytest.fixture
 def create_entry():
-    user_query = ["test query"]
-    chatGPT_response = ["test response"]
-    entry = create_entry_func(user_query, chatGPT_response)
-    return entry.id
-
-
-@pytest.fixture
-def duplicate_entry():
     url = Endpoint.update_context_url
     headers = Endpoint.headers
-    new_entry = {
-        "id": str(uuid.uuid4()),
+    entry_id = str(uuid.uuid4())  
+    entry = {
+        "id": entry_id,
         "userQuery": ["test query"],
         "chatGPTResponse": ["test response"]
     }
-    response = requests.post(url, json={"entries": [new_entry]}, headers=headers)
+    response = requests.post(url, json={"entries": [entry]}, headers=headers)
     if response.status_code == 200:
-        response_json = response.json()
-        return response_json.get('id')
+        return entry_id
     else:
-        raise ValueError(f"Failed to create duplicate entry. Status code: {response.status_code}")
-
-
+        raise ConnectionError("Response was not OK: " + str(response.content))
