@@ -13,3 +13,10 @@ def get_token() -> TokenModel:
         _json = json.loads(json_file.read())
 
         return TokenModel(**_json)
+
+class Endpoint:
+    base_url = "http://localhost:8000"
+    headers = {"Token": f"Bearer {get_token().token}"}
+    get_context_url = f"{base_url}/getHHContext"
+    update_context_url = f"{base_url}/updateHHContext"
+    delete_context_url = f"{base_url}/deleteHHContext"
