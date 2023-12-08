@@ -21,7 +21,7 @@ def test_get_homestead_context():
     assert response.status_code == 200
 
 
-def test_create_new_entry():
+def test_create_new_entry_method():
     # Create a new entry
     user_query = ["test query"]
     chatGPT_response = ["test response"]
@@ -36,70 +36,72 @@ def test_create_new_entry():
 def test_update_homestead_context():
     url = Endpoint.update_context_url
     headers = Endpoint.headers
-    data = {
-        "entries": [
-            {
-                "userQuery": ["Test Query"],
-                "chatGPTResponse": ["Test Response"]
-            }
-        ]
+
+    entry = {
+        "id": str(uuid.uuid4()),
+        "userQuery": ["Sample Query"],
+        "chatGPTResponse": ["Sample Response"]
     }
+
+    data = {
+        "entries": [entry]
+    }
+
     response = requests.post(url, json=data, headers=headers)
+
+    # Print response content for debugging
+    print(response.json())
+
+    # Assert that the status code is 200
     assert response.status_code == 200
+
 
 def test_add_new_entry():
     url = Endpoint.update_context_url
     headers = Endpoint.headers
+    entry_id = str(uuid.uuid4())
     new_entry = {
-        "id": str(uuid.uuid4()),
+        "id": entry_id,
         "userQuery": ["test query"],
         "chatGPTResponse": ["test response"]
     }
     response = requests.post(url, json={"entries": [new_entry]}, headers=headers)
     assert response.status_code == 200
 
-def test_update_existing_entry(create_entry):
+
+def test_duplicate_id_handling(create_entry):
     url = Endpoint.update_context_url
     headers = Endpoint.headers
-    existing_entry = create_entry
-    existing_id = existing_entry.id
+    duplicate_id = create_entry
 
-    updated_entry = {
-        "id": existing_id,
-        "userQuery": ["updated query"],
-        "chatGPTResponse": ["updated response"]
-    }
-
-    response = requests.post(url, json={"entries": [updated_entry]}, headers=headers)
-    assert response.status_code == 200
-
-def test_duplicate_id_handling(duplicate_entry):
-
-    url = Endpoint.update_context_url
-    headers = Endpoint.headers
-    duplicate_id = duplicate_entry
+    # Create another entry with the same ID (duplicate)
     entry = {
-        "id": str(duplicate_id),
+        "id": duplicate_id,
         "userQuery": ["some query"],
         "chatGPTResponse": ["some response"]
     }
     response = requests.post(url, json={"entries": [entry]}, headers=headers)
-    assert response.status_code == 400 
+    assert response.status_code == 400
 
-def test_id_format_validation():
+def test_id_format_validation(fake):
     url = Endpoint.update_context_url
     headers = Endpoint.headers
+
+    # Generate a random string using Faker
+    random_id = fake.pystr(min_chars=8, max_chars=8)  # Generates a random 8-character string
+
     invalid_id_entry = {
-        "id": "74e15761",
+        "id": random_id,
         "userQuery": ["test query"],
         "chatGPTResponse": ["test response"]
     }
     response = requests.post(url, json={"entries": [invalid_id_entry]}, headers=headers)
     assert response.status_code == 422
 
+
 def test_delete_homestead_context(create_entry):
     existing_entry_id = create_entry 
-    url = Endpoint.delete_context_url + f"deleteHHContext/{existing_entry_id}"
+    url = Endpoint.delete_context_url + f"/{existing_entry_id}"
     headers = Endpoint.headers
     response = requests.delete(url, headers=headers)
-    assert response.status_code == 200
+    assert response.status_code == 200 
