@@ -1,6 +1,9 @@
-from pydantic import BaseModel, Field, UUID4
+import logging
+
+from pydantic import BaseModel, validator
 from typing import List
-import uuid
+
+logger = logging.getLogger(__name__)
 
 class EntryModel(BaseModel):
     id: str  
