@@ -8,6 +8,7 @@ pyleniumio = "*"
 fastapi = "*"
 uvicorn = "*"
 markdown = "*"
+coverage = "*"
 
 [dev-packages]
 
