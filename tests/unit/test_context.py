@@ -3,7 +3,7 @@ import os.path
 import uuid
 
 from os import path
-from fw import get_token, Endpoint
+from fw import Endpoint
 from api.context import create_new_entry
 
 herrera_homestead_file = 'hh_context.json'

@@ -9,6 +9,7 @@ fastapi = "*"
 uvicorn = "*"
 markdown = "*"
 coverage = "*"
+openai = "*"
 
 [dev-packages]
 
