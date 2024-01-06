@@ -2,7 +2,7 @@ import pytest
 import uuid
 import requests
 
-from fw import Endpoint
+from fw import Endpoint, get_token
 from api.context import create_new_entry as create_entry_func
 
 
@@ -21,3 +21,11 @@ def create_entry():
         return entry_id
     else:
         raise ConnectionError("Response was not OK: " + str(response.content))
+    
+
+@pytest.fixture
+def token():
+    token_model = get_token()
+
+    return token_model
+    

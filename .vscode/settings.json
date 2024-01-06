@@ -3,5 +3,8 @@
         "tests"
     ],
     "python.testing.unittestEnabled": false,
+    "[python]": {
+        "editor.showUnused": false,
+    },
     "python.testing.pytestEnabled": true
 }
