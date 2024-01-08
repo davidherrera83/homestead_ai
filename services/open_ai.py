@@ -10,13 +10,6 @@ class Openai:
     def __init__(self, token: TokenModel):
         self.token = token
 
-
-    def get_headers(self):
-        return {
-            "Authorization": f"Bearer {self.token.api_key}",
-            "OpenAI-Beta": "assistants=v1"
-        }
-
     def homestead(self, text: str, timeout: int = 5):
         thread_id = self.create_thread()
         self.create_message(text=text)
@@ -32,9 +25,8 @@ class Openai:
                 time.sleep(timeout)
 
         return self.list_message(thread_id)
-    
-    def list_message(self, thread_id: str):
 
+    def list_message(self, thread_id: str):
 
         url = f"https://api.openai.com/v1/threads/{thread_id}/messages"
         headers = OpenAI.headers
