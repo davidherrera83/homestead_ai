@@ -3,7 +3,7 @@ import requests
 import time
 
 from models.token import TokenModel
-from fw import Endpoint, OpenAI, get_token
+from fw import Endpoint, OpenAI
 
 
 class Openai:
