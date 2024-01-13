@@ -1,14 +1,11 @@
-
 import requests
 import time
+import os
 
-from models.token import TokenModel
-from fw import Endpoint, OpenAI
+from fw import Endpoint
 
 
 class Openai:
-    def __init__(self, token: TokenModel):
-        self.token = token
 
     def homestead(self, text: str, timeout: int = 5):
         thread_id = self.create_thread()
@@ -24,12 +21,14 @@ class Openai:
             else:
                 time.sleep(timeout)
 
-        return self.list_message(thread_id)
+        messages_response = self.list_messages(thread_id)
 
-    def list_message(self, thread_id: str):
+        return messages_response.json()
+
+    def list_messages(self, thread_id: str):
 
         url = f"https://api.openai.com/v1/threads/{thread_id}/messages"
-        headers = OpenAI.headers
+        headers = Endpoint.headers
 
         response = requests.get(url=url, headers=headers)
         if response.ok:
@@ -38,9 +37,29 @@ class Openai:
             raise ConnectionError(
                 "Response was not OK: " + str(response.content))
 
+    def parse_response(self, messages: dict):
+        for message in messages.get('data', []):
+            if message.get("role") == "assistant":
+                content_list = message.get("content", [])
+                if content_list and isinstance(content_list, list):
+                    for content in content_list:
+                        if "text" in content and "value" in content["text"]:
+                            return content["text"]["value"]
+
+        return None
+    
+    def save_test_artifact(self, data: str, directory: str = "tests/test_artifacts", file_name: str = "test_artifact.txt"):
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        file_path = os.path.join(directory, file_name)
+        with open(file_path, "w") as file:
+            file.write(data)
+
+
     def create_thread(self):
         url = Endpoint.threads
-        headers = OpenAI.headers
+        headers = Endpoint.headers
         response = requests.post(url=url, headers=headers)
         if response.ok:
             return response.json()['id']
@@ -51,11 +70,11 @@ class Openai:
     def create_message(self, text: str):
         thread_id = self.create_thread()
         url = Endpoint.threads + f"/{thread_id}/messages"
-        headers = OpenAI.headers
+        headers = Endpoint.headers
         payload = {
             "role": "user",
             "content": f"{text}",
-            "file_ids": ["file-1IWyqznJRKnfvRBwV4esVbuz"]
+            "file_ids": [f"{Endpoint.file_id}"]
         }
         response = requests.post(url=url, headers=headers, json=payload)
         if response.ok:
@@ -66,9 +85,9 @@ class Openai:
 
     def create_run(self, thread_id: str):
         url = Endpoint.threads + f"/{thread_id}/runs"
-        headers = OpenAI.headers
+        headers = Endpoint.headers
         payload = {
-            "assistant_id": f"{OpenAI.assistant_id}"
+            "assistant_id": f"{Endpoint.assistant_id}"
         }
         response = requests.post(url=url, headers=headers, json=payload)
         if response.ok:
@@ -79,10 +98,31 @@ class Openai:
 
     def retrieve_run(self, thread_id: str, run_id: str):
         url = Endpoint.threads + f"/{thread_id}/runs/{run_id}"
-        headers = OpenAI.headers
+        headers = Endpoint.headers
         response = requests.get(url=url, headers=headers)
         if response.ok:
             return response.json()['status']
         else:
             raise ConnectionError(
                 "Response was not OK: " + str(response.content))
+
+    def list_files(self):
+        url = Endpoint.files
+        headers = Endpoint.headers
+        response = requests.get(url=url, headers=headers)
+        if response.ok:
+            return response.json()
+        else:
+            raise ConnectionError(
+                "Response was not OK: " + str(response.content))
+        
+    def delete_file(self, file_id: str):
+        url = Endpoint.files + f"/{file_id}"
+        headers = Endpoint.headers
+        response = requests.delete(url=url, headers=headers)
+        if response.ok:
+            return response
+        else:
+            raise ConnectionError(
+                "Response was not OK: " + str(response.content))
+        
