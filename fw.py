@@ -24,5 +24,8 @@ class Endpoint:
         "Authorization": f"Bearer {get_token().api_key}",
         "OpenAI-Beta": "assistants=v1"
     }
+    file_headers = {
+        "Authorization": f"Bearer {get_token().api_key}",
+    }
     threads = f"{base_url}/threads"
     files = "https://api.openai.com/v1/files"

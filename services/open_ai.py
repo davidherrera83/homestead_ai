@@ -106,12 +106,25 @@ class Openai:
             raise ConnectionError(
                 "Response was not OK: " + str(response.content))
 
+    def upload_file(self, path: str = '/Users/david.herrera/dev/homestead_ai/hh_context.json'):
+        url = Endpoint.files
+        headers = Endpoint.file_headers
+        files = {'file': open(path, 'rb')}
+        data = {
+            "purpose": "assistants"
+        }
+        response = requests.post(url, headers=headers, data=data, files=files)
+        if response.ok:
+            return response
+        else:
+            raise ConnectionError("Response was not OK: " + str(response.content))
+        
     def list_files(self):
         url = Endpoint.files
         headers = Endpoint.headers
         response = requests.get(url=url, headers=headers)
         if response.ok:
-            return response.json()
+            return response
         else:
             raise ConnectionError(
                 "Response was not OK: " + str(response.content))
