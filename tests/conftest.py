@@ -1,14 +1,14 @@
 import pytest
 
-from fw import get_token
+from fw import get_secret
 from services.open_ai import Openai
 
 
 @pytest.fixture
-def token():
-    _token_model = get_token()
+def secret():
+    _secret_model = get_secret()
 
-    return _token_model
+    return _secret_model
 
 
 @pytest.fixture
