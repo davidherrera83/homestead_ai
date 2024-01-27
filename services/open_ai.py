@@ -1,15 +1,16 @@
 import requests
 import time
+import uuid
 import os
 
-from fw import Endpoint
+from fw import Endpoint, Files
 
 
 class Openai:
 
-    def homestead(self, text: str, timeout: int = 5):
+    def homestead(self, user_query: str, timeout: int = 5):
         thread_id = self.create_thread()
-        self.create_message(text=text)
+        self.create_message(user_query=user_query)
         run_id = self.create_run(thread_id=thread_id)
 
         while True:
@@ -36,17 +37,6 @@ class Openai:
         else:
             raise ConnectionError(
                 "Response was not OK: " + str(response.content))
-
-    def parse_response(self, messages: dict):
-        for message in messages.get('data', []):
-            if message.get("role") == "assistant":
-                content_list = message.get("content", [])
-                if content_list and isinstance(content_list, list):
-                    for content in content_list:
-                        if "text" in content and "value" in content["text"]:
-                            return content["text"]["value"]
-
-        return None
     
     def save_test_artifact(self, data: str, directory: str = "tests/test_artifacts", file_name: str = "test_artifact.txt"):
         if not os.path.exists(directory):
@@ -67,14 +57,13 @@ class Openai:
             raise ConnectionError(
                 "Response was not OK: " + str(response.content))
 
-    def create_message(self, text: str):
+    def create_message(self, user_query: str):
         thread_id = self.create_thread()
         url = Endpoint.threads + f"/{thread_id}/messages"
         headers = Endpoint.headers
         payload = {
             "role": "user",
-            "content": f"{text}",
-            "file_ids": [f"{Endpoint.file_id}"]
+            "content": f"{user_query}",
         }
         response = requests.post(url=url, headers=headers, json=payload)
         if response.ok:
@@ -106,7 +95,7 @@ class Openai:
             raise ConnectionError(
                 "Response was not OK: " + str(response.content))
 
-    def upload_file(self, path: str = '/Users/david.herrera/dev/homestead_ai/hh_context.json'):
+    def upload_file(self, path: str = f'{Files.hh_context}'):
         url = Endpoint.files
         headers = Endpoint.file_headers
         files = {'file': open(path, 'rb')}
@@ -115,7 +104,7 @@ class Openai:
         }
         response = requests.post(url, headers=headers, data=data, files=files)
         if response.ok:
-            return response
+            return response.json()['id']
         else:
             raise ConnectionError("Response was not OK: " + str(response.content))
         
