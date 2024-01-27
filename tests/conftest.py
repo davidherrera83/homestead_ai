@@ -1,24 +1,33 @@
 import pytest
+import json
 
-from fw import get_secret
 from services.open_ai import Openai
-
-
-@pytest.fixture
-def secret():
-    _secret_model = get_secret()
-
-    return _secret_model
+from homestead.context import Homestead
 
 
 @pytest.fixture
 def openai():
+    """Instance of Openai for testing."""
     _openai = Openai()
 
     return _openai
 
 @pytest.fixture
-def new_file():
-    _file = Openai().upload_file()
+def homestead():
+    """Instance of Openai for testing."""
+    _homestead = Homestead()
 
-    return _file
+    return _homestead
+
+@pytest.fixture
+def homestead_instance(tmp_path):
+    """Creates a temporary JSON file for testing then patches the Homestead class to use this temporary file."""
+    temp_file = tmp_path / "test_context.json"
+    with open(temp_file, 'w') as file:
+        json.dump({"entries": []}, file)
+
+    original_json = Homestead._json
+    Homestead._json = str(temp_file)
+    yield Homestead()
+    Homestead._json = original_json
+

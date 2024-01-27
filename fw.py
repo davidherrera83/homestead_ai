@@ -6,6 +6,7 @@ from models.secret import SecretModel
 _ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
+
 def get_secret() -> SecretModel:
     """
     Get the TokenModel from secrets.json
@@ -18,7 +19,6 @@ def get_secret() -> SecretModel:
 class Endpoint:
         base_url = "https://api.openai.com/v1"
         assistant_id = get_secret().assistant_id
-        file_id = get_secret().file_id
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {get_secret().api_key}",
@@ -29,3 +29,7 @@ class Endpoint:
         }
         threads = f"{base_url}/threads"
         files = f"{base_url}" +"/files"
+
+class Files:
+        hh_context = '/Users/david.herrera/dev/homestead_ai/hh_context.json'
+        file_id = get_secret().file_id
