@@ -1,5 +1,6 @@
 import os
 import json
+import pytest
 
 from os import path
 from models.entry import EntryModel, RootSchema
@@ -37,9 +38,13 @@ def test_add_assistant_response_to_context_file(openai, homestead):
     else:
         assert assistant_response is not None, "Failed to parse response"
 
-
-def test_delete_context_by_id(homestead):
-    entry_id = "2a5473d3-f1ab-4aaa-b2f7-24202ce760cc"
+@pytest.mark.parametrize(
+        "entry_id",[
+            "80c5950f-53a5-4840-9dce-43a0a6cbe382"
+        ]
+)
+def test_delete_context_by_id(entry_id, homestead):
+    entry_id = f"{entry_id}"
 
     with open(homestead._json, 'r') as file:
         data = json.load(file)
@@ -52,7 +57,7 @@ def test_delete_context_by_id(homestead):
         assert not any(entry['id'] == entry_id for entry in data['entries'])
 
 def test_homestead_workflow(openai, homestead):
-    user_query = "Define PP"
+    user_query = "Now that HH has implemented the OpenAI Assistants API, What would be the best way to have that help build up Herrera Homestead?"
     response = openai.homestead(user_query)
     assistant_response = homestead.parse_response(user_query, response)
     if assistant_response:
@@ -61,7 +66,3 @@ def test_homestead_workflow(openai, homestead):
         homestead.update_homestead_context(root_schema)
     else:
         assert assistant_response is not None, "Failed to parse response"
-
-    
-
-

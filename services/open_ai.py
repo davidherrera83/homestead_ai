@@ -1,19 +1,77 @@
-import requests
 import time
-import uuid
-import os
 
-from fw import Endpoint, Files
+from openai import OpenAI
+from fw import get_secret
+
 
 
 class Openai:
+    def __init__(self) -> None:
+        api_key = get_secret().api_key
+        self.client = OpenAI(api_key=api_key)
 
-    def homestead(self, user_query: str, timeout: int = 5):
+    def create_thread(self):
+        try:
+            thread = self.client.beta.threads.create()
+            return thread.id
+        except Exception as e:
+            print(f"Error creating message thread: {e}")
+            return None
+    
+    def create_message(self, user_query, thread_id):
+        try:
+            thread_message = self.client.beta.threads.messages.create(
+                f"{thread_id}",
+                role = "user",
+                content = user_query
+            )
+            return thread_message.id
+        except Exception as e:
+            print(f"Error creating message: {e}")
+            return None
+        
+    def create_run(self, thread_id: str):
+        try:
+            run = self.client.beta.threads.runs.create(
+                thread_id= f"{thread_id}",
+                assistant_id= f"{get_secret().assistant_id}"
+            )
+            return run.id
+        except Exception as e:
+            print(f"Error creating run: {e}")
+            return None
+
+    def retrieve_run(self, thread_id: str, run_id: str):
+        try:
+            run = self.client.beta.threads.runs.retrieve(
+                thread_id = f"{thread_id}",
+                run_id = f"{run_id}"
+            )
+            return run.status
+        except Exception as e:
+            print(f"Error retrieving run: {e}")
+            return None
+        
+    def list_messages(self, thread_id: str):
+        try:
+            thread_messages = self.client.beta.threads.messages.list(
+                f"{thread_id}"
+            )
+            return thread_messages.data
+        except Exception as e:
+            print(f"Error listing messages: {e}")
+            return None
+
+    def homestead(self, user_query: str, timeout: int = 5, max_wait_time: int = 60):
+        start_time = time.time()
         thread_id = self.create_thread()
-        self.create_message(user_query=user_query)
-        run_id = self.create_run(thread_id=thread_id)
+        self.create_message(user_query, thread_id)
+        run_id = self.create_run(thread_id)
 
         while True:
+            if time.time() - start_time > max_wait_time:
+                raise TimeoutError("Exceeded maximum wait time for response")
+
             status = self.retrieve_run(thread_id, run_id)
             if status == "completed":
                 break
@@ -23,108 +81,6 @@ class Openai:
                 time.sleep(timeout)
 
         messages_response = self.list_messages(thread_id)
+        return messages_response
 
-        return messages_response.json()
-
-    def list_messages(self, thread_id: str):
-
-        url = f"https://api.openai.com/v1/threads/{thread_id}/messages"
-        headers = Endpoint.headers
-
-        response = requests.get(url=url, headers=headers)
-        if response.ok:
-            return response
-        else:
-            raise ConnectionError(
-                "Response was not OK: " + str(response.content))
-    
-    def save_test_artifact(self, data: str, directory: str = "tests/test_artifacts", file_name: str = "test_artifact.txt"):
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-        file_path = os.path.join(directory, file_name)
-        with open(file_path, "w") as file:
-            file.write(data)
-
-
-    def create_thread(self):
-        url = Endpoint.threads
-        headers = Endpoint.headers
-        response = requests.post(url=url, headers=headers)
-        if response.ok:
-            return response.json()['id']
-        else:
-            raise ConnectionError(
-                "Response was not OK: " + str(response.content))
-
-    def create_message(self, user_query: str):
-        thread_id = self.create_thread()
-        url = Endpoint.threads + f"/{thread_id}/messages"
-        headers = Endpoint.headers
-        payload = {
-            "role": "user",
-            "content": f"{user_query}",
-        }
-        response = requests.post(url=url, headers=headers, json=payload)
-        if response.ok:
-            return response.json()['id']
-        else:
-            raise ConnectionError(
-                "Response was not OK: " + str(response.content))
-
-    def create_run(self, thread_id: str):
-        url = Endpoint.threads + f"/{thread_id}/runs"
-        headers = Endpoint.headers
-        payload = {
-            "assistant_id": f"{Endpoint.assistant_id}"
-        }
-        response = requests.post(url=url, headers=headers, json=payload)
-        if response.ok:
-            return response.json()['id']
-        else:
-            raise ConnectionError(
-                "Response was not OK: " + str(response.content))
-
-    def retrieve_run(self, thread_id: str, run_id: str):
-        url = Endpoint.threads + f"/{thread_id}/runs/{run_id}"
-        headers = Endpoint.headers
-        response = requests.get(url=url, headers=headers)
-        if response.ok:
-            return response.json()['status']
-        else:
-            raise ConnectionError(
-                "Response was not OK: " + str(response.content))
-
-    def upload_file(self, path: str = f'{Files.hh_context}'):
-        url = Endpoint.files
-        headers = Endpoint.file_headers
-        files = {'file': open(path, 'rb')}
-        data = {
-            "purpose": "assistants"
-        }
-        response = requests.post(url, headers=headers, data=data, files=files)
-        if response.ok:
-            return response.json()['id']
-        else:
-            raise ConnectionError("Response was not OK: " + str(response.content))
-        
-    def list_files(self):
-        url = Endpoint.files
-        headers = Endpoint.headers
-        response = requests.get(url=url, headers=headers)
-        if response.ok:
-            return response
-        else:
-            raise ConnectionError(
-                "Response was not OK: " + str(response.content))
-        
-    def delete_file(self, file_id: str):
-        url = Endpoint.files + f"/{file_id}"
-        headers = Endpoint.headers
-        response = requests.delete(url=url, headers=headers)
-        if response.ok:
-            return response
-        else:
-            raise ConnectionError(
-                "Response was not OK: " + str(response.content))
-        
+          
