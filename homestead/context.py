@@ -17,17 +17,17 @@ class Homestead:
             chatGPTResponse=chatGPT_response
         )
     
-    def parse_response(self, user_query, messages: dict):
+    def parse_response(self, user_query, messages: list):
         chatGPT_response = None
 
-        for message in messages.get('data', []):
-            if message.get("role") == "assistant":
-                content_list = message.get("content", [])
-                if content_list and isinstance(content_list, list):
-                    for content in content_list:
-                        if "text" in content and "value" in content["text"]:
-                            chatGPT_response = content["text"]["value"]
-                            break
+        for message in messages:
+            if message.role == "assistant":
+                for content in message.content:
+                    if content.type == 'text':
+                        chatGPT_response = content.text.value
+                        break
+            if chatGPT_response:
+                break
 
         if chatGPT_response is not None:
             return {
