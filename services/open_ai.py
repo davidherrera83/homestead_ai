@@ -1,7 +1,7 @@
 import time
 
 from openai import OpenAI
-from fw import get_secret
+from fw import get_secret, Files
 
 
 
@@ -61,6 +61,26 @@ class Openai:
         except Exception as e:
             print(f"Error listing messages: {e}")
             return None
+        
+    def upload_files(self):
+        try:
+            file = self.client.files.create(
+                file=open(f"{Files.hh_context}", "rb"),
+                purpose="assistants"
+            )
+            return file.id
+        except Exception as e:
+            print(f"Error uploading file: {e}")
+            return None
+        
+    def delete_file(self, file_id: str):
+        try:
+            file = self.client.files.delete(file_id)
+            return file.deleted
+        except Exception as e:
+            print (f"Error deleting file: {e}")
+            return False
+
 
     def homestead(self, user_query: str, timeout: int = 5, max_wait_time: int = 60):
         start_time = time.time()

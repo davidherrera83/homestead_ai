@@ -57,12 +57,16 @@ def test_delete_context_by_id(entry_id, homestead):
         assert not any(entry['id'] == entry_id for entry in data['entries'])
 
 def test_homestead_workflow(openai, homestead):
-    user_query = "Now that HH has implemented the OpenAI Assistants API, What would be the best way to have that help build up Herrera Homestead?"
+    user_query = "What would be the best strategy to advertise the Mentoring service of HH?"
     response = openai.homestead(user_query)
     assistant_response = homestead.parse_response(user_query, response)
     if assistant_response:
         entry = EntryModel(**assistant_response)
         root_schema = RootSchema(entries=[entry])
         homestead.update_homestead_context(root_schema)
+        old_file_id = Files.file_id
+        new_file_id = openai.upload_files()
+        openai.delete_file(old_file_id)
+        homestead.update_file_id_in_secrets(new_file_id)
     else:
         assert assistant_response is not None, "Failed to parse response"

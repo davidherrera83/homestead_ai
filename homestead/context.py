@@ -4,6 +4,7 @@ import uuid
 
 from models.entry import RootSchema
 from models.entry import EntryModel
+from fw import Files
 
 class Homestead:
     _root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -81,3 +82,15 @@ class Homestead:
             json.dump(data, file, indent=4)
 
         return f"Entry with ID {entry_id} has been deleted."
+    
+    def update_file_id_in_secrets(self, new_file_id: str):
+        try:
+            with open(f'{Files.secrets}', 'r') as file:
+                secrets_data = json.load(file)
+
+            secrets_data['file_id'] = new_file_id
+
+            with open(f'{Files.secrets}', 'w') as file:
+                json.dump(secrets_data, file, indent=4)
+        except Exception as e:
+            print(f"Error updating secrets.json: {e}")
