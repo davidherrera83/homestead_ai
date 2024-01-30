@@ -32,4 +32,5 @@ class Endpoint:
 
 class Files:
         hh_context = '/Users/david.herrera/dev/homestead_ai/hh_context.json'
+        secrets = '/Users/david.herrera/dev/homestead_ai/secrets.json'
         file_id = get_secret().file_id
