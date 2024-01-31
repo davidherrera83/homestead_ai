@@ -1,14 +1,18 @@
 import os
 import json
 import uuid
+import time
 
+from services.open_ai import Openai
 from models.entry import RootSchema
 from models.entry import EntryModel
-from fw import Files
+from fw import Files, get_secret
 
 class Homestead:
     _root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     _json = os.path.join(_root_dir, 'hh_context.json')
+    _api_key = get_secret().api_key
+    _openai = Openai()
 
     def create_new_entry(self, user_query: list[str], chatGPT_response: list[str]) -> EntryModel:
         entry_id = str(uuid.uuid4())
@@ -18,7 +22,7 @@ class Homestead:
             chatGPTResponse=chatGPT_response
         )
     
-    def parse_response(self, user_query, messages: list):
+    def parse_response(self, user_query: str, messages: list, thread_id: str):
         chatGPT_response = None
 
         for message in messages:
@@ -34,7 +38,8 @@ class Homestead:
             return {
                 "id": str(uuid.uuid4()),
                 "userQuery": [user_query], 
-                "chatGPTResponse": [chatGPT_response]
+                "chatGPTResponse": [chatGPT_response],
+                "thread_id": thread_id
             }
 
         return None
@@ -92,5 +97,56 @@ class Homestead:
 
             with open(f'{Files.secrets}', 'w') as file:
                 json.dump(secrets_data, file, indent=4)
+        except Exception as e:
+            print(f"Error updating secrets.json: {e}")
+
+    def conversation(self, user_query: str, thread_id = None, timeout: int = 5, max_wait_time: int = 60):
+        start_time = time.time()
+
+        if thread_id is None:
+            thread_id = self._openai.create_thread()
+            self.update_thread_id_in_secrets(thread_id)
+
+        self._openai.create_message(user_query, thread_id)
+        run_id = self._openai.create_run(thread_id)
+
+        while True:
+            if time.time() - start_time > max_wait_time:
+                raise TimeoutError("Exceeded maximum wait time for response")
+
+            status = self._openai.retrieve_run(thread_id, run_id)
+            if status == "completed":
+                break
+            elif status == "failed":
+                raise Exception("Run failed")
+            else:
+                time.sleep(timeout)
+
+        messages_response = self._openai.list_messages(thread_id)
+        return messages_response
+    
+    def get_thread_id(self):
+        secrets_file_path = os.path.join(os.path.dirname(__file__), "secrets.json")
+        try:
+            with open(secrets_file_path, 'r') as file:
+                secrets_data = json.load(file)
+            return secrets_data.get('thread_id')
+        except Exception as e:
+            print(f"Error reading thread_id from secrets.json: {e}")
+            return None
+
+    
+    def update_thread_id_in_secrets(self, new_thread_id: str):
+        secrets_file_path = os.path.join(os.path.dirname(__file__), "secrets.json")
+        try:
+            with open(secrets_file_path, 'r') as file:
+                secrets_data = json.load(file)
+
+            secrets_data['thread_id'] = new_thread_id
+
+            with open(secrets_file_path, 'w') as file:
+                json.dump(secrets_data, file, indent=4)
+
+            print("Updated thread_id in secrets.json successfully.")
         except Exception as e:
             print(f"Error updating secrets.json: {e}")
