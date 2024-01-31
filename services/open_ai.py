@@ -1,7 +1,7 @@
 import time
 
 from openai import OpenAI
-from fw import get_secret, Files
+from fw import Files, get_secret
 
 
 
@@ -80,27 +80,4 @@ class Openai:
         except Exception as e:
             print (f"Error deleting file: {e}")
             return False
-
-
-    def homestead(self, user_query: str, timeout: int = 5, max_wait_time: int = 60):
-        start_time = time.time()
-        thread_id = self.create_thread()
-        self.create_message(user_query, thread_id)
-        run_id = self.create_run(thread_id)
-
-        while True:
-            if time.time() - start_time > max_wait_time:
-                raise TimeoutError("Exceeded maximum wait time for response")
-
-            status = self.retrieve_run(thread_id, run_id)
-            if status == "completed":
-                break
-            elif status == "failed":
-                raise Exception("Run failed")
-            else:
-                time.sleep(timeout)
-
-        messages_response = self.list_messages(thread_id)
-        return messages_response
-
           
