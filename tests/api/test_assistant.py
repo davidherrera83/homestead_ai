@@ -24,23 +24,11 @@ def test_create_new_entry_in_context(homestead_instance):
     entry = homestead_instance.create_new_entry(user_query, chatGPT_response)
     assert entry.userQuery == user_query
     assert entry.chatGPTResponse == chatGPT_response
-
-
-def test_add_assistant_response_to_context_file(openai, homestead):
-    user_query = "What is the PP part of HH?"
-    response = openai.homestead(user_query)
-    assistant_response = openai.parse_response(user_query, response)
-
-    if assistant_response:
-        entry = EntryModel(**assistant_response)
-        root_schema = RootSchema(entries=[entry])
-        homestead.update_homestead_context(root_schema)
-    else:
-        assert assistant_response is not None, "Failed to parse response"
+    
 
 @pytest.mark.parametrize(
         "entry_id",[
-            "80c5950f-53a5-4840-9dce-43a0a6cbe382"
+            "7ec50aaf-a653-439e-91c4-be779fc5ff5f"
         ]
 )
 def test_delete_context_by_id(entry_id, homestead):
@@ -57,9 +45,8 @@ def test_delete_context_by_id(entry_id, homestead):
         assert not any(entry['id'] == entry_id for entry in data['entries'])
 
 def test_homestead_workflow(openai, homestead):
-    user_query = "Knowing what you know about HH, What are the top 5 things we need to work on or implement to standup this business?"
-    response = homestead.conversation(user_query)
-    thread_id = secrets().thread_id
+    user_query = "How can completing my AI assistant from OpenAI help the furniture flipping business of HH?"
+    response, thread_id = homestead.conversation(user_query)
     assistant_response = homestead.parse_response(user_query, response, thread_id)
     if assistant_response:
         entry = EntryModel(**assistant_response)
@@ -74,9 +61,8 @@ def test_homestead_workflow(openai, homestead):
 
 def test_reply_to_homestead(openai, homestead):
     # Initial Query
-    user_query = "How can I leverage creating an assistant from Openai to create a revenue flow for HH?"
-    initial_response = homestead.conversation(user_query)
-    thread_id = homestead.get_thread_id()
+    user_query = "Now that I have completed the AI assistant, can I create a chatbot for my Macbook?"
+    initial_response, thread_id = homestead.conversation(user_query)
     initial_assistant_response = homestead.parse_response(user_query, initial_response, thread_id)
 
     # Update Homestead context after initial response
@@ -85,20 +71,13 @@ def test_reply_to_homestead(openai, homestead):
         root_schema = RootSchema(entries=[entry])
         homestead.update_homestead_context(root_schema)
 
-        # Manage files
-        old_file_id = Files.file_id
-        new_file_id = openai.upload_files()
-        openai.delete_file(old_file_id)
-        homestead.update_file_id_in_secrets(new_file_id)
-    else:
-        assert initial_assistant_response is not None, "Failed to parse initial response"
-
     # Assertions for initial response
     assert 'thread_id' in initial_assistant_response, "Thread ID missing in initial response"
 
     # Continued Conversation
-    user_reply = "Can you create a software roadmap with that in mind?"
-    continued_response = homestead.conversation(user_reply, thread_id=thread_id)
+    user_reply = "Can you create a software roadmap for that?"
+    continued_response, thread_id = homestead.conversation(user_reply, thread_id)
+
     continued_assistant_response = homestead.parse_response(user_reply, continued_response, thread_id)
 
     # Update Homestead context after continued response

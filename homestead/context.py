@@ -26,13 +26,14 @@ class Homestead:
         chatGPT_response = None
 
         for message in messages:
-            if message.role == "assistant":
+            # Ensure that 'message' is the correct type and has a 'role' attribute
+            if hasattr(message, 'role') and message.role == "assistant":
                 for content in message.content:
-                    if content.type == 'text':
+                    if hasattr(content, 'type') and content.type == 'text':
                         chatGPT_response = content.text.value
                         break
-            if chatGPT_response:
-                break
+                if chatGPT_response:
+                    break
 
         if chatGPT_response is not None:
             return {
@@ -123,7 +124,7 @@ class Homestead:
                 time.sleep(timeout)
 
         messages_response = self._openai.list_messages(thread_id)
-        return messages_response
+        return messages_response, thread_id
     
     def get_thread_id(self):
         secrets_file_path = os.path.join(os.path.dirname(__file__), "secrets.json")
