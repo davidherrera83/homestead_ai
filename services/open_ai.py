@@ -1,4 +1,4 @@
-import time
+import json
 
 from openai import OpenAI
 from fw import Files, get_secret
@@ -80,4 +80,20 @@ class Openai:
         except Exception as e:
             print (f"Error deleting file: {e}")
             return False
+        
+    def manage_files(self):
+        old_file_id = Files.file_id
+        new_file_id = self.upload_files()
+        self.delete_file(old_file_id)
+        try:
+            with open(f'{Files.secrets}', 'r') as file:
+                secrets_data = json.load(file)
+
+            secrets_data['file_id'] = new_file_id
+
+            with open(f'{Files.secrets}', 'w') as file:
+                json.dump(secrets_data, file, indent=4)
+        except Exception as e:
+            print(f"Error updating secrets.json: {e}")
+        return new_file_id
           

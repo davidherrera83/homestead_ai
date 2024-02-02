@@ -1,12 +1,8 @@
 import os
 import json
-import pytest
 
 from os import path
-from models.entry import EntryModel, RootSchema
-from fw import Files, get_secret as secrets
-
-
+from unittest.mock import patch
 
 def test_json_file_exists():
     herrera_homestead_file = 'hh_context.json'
@@ -24,15 +20,10 @@ def test_create_new_entry_in_context(homestead_instance):
     entry = homestead_instance.create_new_entry(user_query, chatGPT_response)
     assert entry.userQuery == user_query
     assert entry.chatGPTResponse == chatGPT_response
-    
 
-@pytest.mark.parametrize(
-        "entry_id",[
-            "7ec50aaf-a653-439e-91c4-be779fc5ff5f"
-        ]
-)
-def test_delete_context_by_id(entry_id, homestead):
-    entry_id = f"{entry_id}"
+
+def test_delete_context_by_id(entry, homestead):
+    entry_id = f"{entry.id}"
 
     with open(homestead._json, 'r') as file:
         data = json.load(file)
@@ -44,55 +35,24 @@ def test_delete_context_by_id(entry_id, homestead):
         data = json.load(file)
         assert not any(entry['id'] == entry_id for entry in data['entries'])
 
-def test_homestead_workflow(openai, homestead):
-    user_query = "How can completing my AI assistant from OpenAI help the furniture flipping business of HH?"
-    response, thread_id = homestead.conversation(user_query)
-    assistant_response = homestead.parse_response(user_query, response, thread_id)
-    if assistant_response:
-        entry = EntryModel(**assistant_response)
-        root_schema = RootSchema(entries=[entry])
-        homestead.update_homestead_context(root_schema)
-        old_file_id = Files.file_id
-        new_file_id = openai.upload_files()
-        openai.delete_file(old_file_id)
-        homestead.update_file_id_in_secrets(new_file_id)
-    else:
-        assert assistant_response is not None, "Failed to parse response"
+@patch('homestead.homestead.Homestead.conversation')
+def test_homestead_workflow(mock_conversation, openai, homestead_instance):
+    mock_initial_response = [{"role": "assistant", "content": [{"type": "text", "text": {"value": "Mocked initial response"}}]}]
+    mock_continued_response = [{"role": "assistant", "content": [{"type": "text", "text": {"value": "Mocked continued response"}}]}]
+    mock_conversation.side_effect = [
+        (mock_initial_response, "mock_thread_id"),
+        (mock_continued_response, "mock_thread_id")
+    ]
 
-def test_reply_to_homestead(openai, homestead):
     # Initial Query
-    user_query = "Now that I have completed the AI assistant, can I create a chatbot for my Macbook?"
-    initial_response, thread_id = homestead.conversation(user_query)
-    initial_assistant_response = homestead.parse_response(user_query, initial_response, thread_id)
-
-    # Update Homestead context after initial response
-    if initial_assistant_response:
-        entry = EntryModel(**initial_assistant_response)
-        root_schema = RootSchema(entries=[entry])
-        homestead.update_homestead_context(root_schema)
-
-    # Assertions for initial response
-    assert 'thread_id' in initial_assistant_response, "Thread ID missing in initial response"
+    user_query = "Now that I have completed the AI assistant from Open AI, How can I interact with it using a GUI?"
+    initial_response, thread_id = homestead_instance.conversation(user_query)
+    initial_assistant_response = homestead_instance.process_response_and_update_context(user_query, initial_response, thread_id)
+    assert initial_assistant_response is not None, "Initial response parsing failed"
 
     # Continued Conversation
     user_reply = "Can you create a software roadmap for that?"
-    continued_response, thread_id = homestead.conversation(user_reply, thread_id)
+    continued_response, thread_id = homestead_instance.conversation(user_reply, thread_id)
+    continued_assistant_response = homestead_instance.process_response_and_update_context(user_reply, continued_response, thread_id)
 
-    continued_assistant_response = homestead.parse_response(user_reply, continued_response, thread_id)
-
-    # Update Homestead context after continued response
-    if continued_assistant_response:
-        entry = EntryModel(**continued_assistant_response)
-        root_schema = RootSchema(entries=[entry])
-        homestead.update_homestead_context(root_schema)
-
-        # Manage files
-        old_file_id = Files.file_id
-        new_file_id = openai.upload_files()
-        openai.delete_file(old_file_id)
-        homestead.update_file_id_in_secrets(new_file_id)
-    else:
-        assert continued_assistant_response is not None, "Failed to parse continued response"
-
-    # Assertions for continued response
     assert continued_assistant_response is not None, "Continued response parsing failed"

@@ -2,7 +2,8 @@ import pytest
 import json
 
 from services.open_ai import Openai
-from homestead.context import Homestead
+from homestead.homestead import Homestead
+from models.entry import RootSchema
 
 
 @pytest.fixture
@@ -31,3 +32,12 @@ def homestead_instance(tmp_path):
     yield Homestead()
     Homestead._json = original_json
 
+@ pytest.fixture
+def entry(homestead_instance):
+    user_query = ["Sample query"]
+    chatGPT_response = ["Sample response"]
+    new_entry = homestead_instance.create_new_entry(user_query, chatGPT_response)
+    root_schema = RootSchema(entries=[new_entry])
+    homestead_instance.update_homestead_context(root_schema)
+    return new_entry
+    return entry
